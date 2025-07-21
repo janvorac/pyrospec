@@ -1,0 +1,4 @@
+include README.md
+include LICENSE
+include pyrospec/__init__.py
+recursive-include pyrospec/spectral_databases *
