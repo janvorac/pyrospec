@@ -1,5 +1,6 @@
 from typing import Dict
 
+import numpy as np
 from pydantic import BaseModel
 
 from pyrospec.enums import SpectralSystemEnum
@@ -12,16 +13,16 @@ class SpectralSystemParams(BaseModel):
 
 
 class SpectralSystemParamFitSettings(BaseModel):
-    Tvib_min: float | None
-    Tvib_max: float | None
+    Tvib_min: float = 0
+    Tvib_max: float = np.inf
     Tvib_fixed: bool
 
-    Trot_min: float | None
-    Trot_max: float | None
+    Trot_min: float = 0
+    Trot_max: float = np.inf
     Trot_fixed: bool
 
-    intensity_min: float | None
-    intensity_max: float | None
+    intensity_min: float = 0
+    intensity_max: float = np.inf
     intensity_fixed: bool
 
 
@@ -34,20 +35,20 @@ class SimulatedSpectrumParams(BaseModel):
 
 
 class SimulatedSpectrumParamFitSettings(BaseModel):
-    slitf_gauss_min: float | None
-    slitf_gauss_max: float | None
+    slitf_gauss_min: float = 0
+    slitf_gauss_max: float = np.inf
     slitf_gauss_fixed: bool
 
-    slitf_lorentz_min: float | None
-    slitf_lorentz_max: float | None
+    slitf_lorentz_min: float = 0
+    slitf_lorentz_max: float = np.inf
     slitf_lorentz_fixed: bool
 
-    baseline_min: float | None
-    baseline_max: float | None
+    baseline_min: float = -np.inf
+    baseline_max: float = np.inf
     baseline_fixed: bool
 
-    baseline_slope_min: float | None
-    baseline_slope_max: float | None
+    baseline_slope_min: float = -np.inf
+    baseline_slope_max: float = np.inf
     baseline_slope_fixed: bool
 
 
@@ -58,16 +59,16 @@ class MeasuredSpectrumParams(BaseModel):
 
 
 class MeasuredSpectrumParamFitSettings(BaseModel):
-    wav_start_min: float | None
-    wav_start_max: float | None
+    wav_start_min: float = 0
+    wav_start_max: float = np.inf
     wav_start_fixed: bool
 
-    wav_step_min: float | None
-    wav_step_max: float | None
+    wav_step_min: float = 0
+    wav_step_max: float = np.inf
     wav_step_fixed: bool
 
-    wav_2nd_min: float | None
-    wav_2nd_max: float | None
+    wav_2nd_min: float = -np.inf
+    wav_2nd_max: float = np.inf
     wav_2nd_fixed: bool
 
 
