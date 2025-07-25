@@ -69,3 +69,14 @@ class MeasuredSpectrumParamFitSettings(BaseModel):
     wav_2nd_min: float | None
     wav_2nd_max: float | None
     wav_2nd_fixed: bool
+
+
+class Params(BaseModel):
+    meas: MeasuredSpectrumParams
+    sim: SimulatedSpectrumParams
+
+
+class FitSettings(BaseModel):
+    meas: MeasuredSpectrumParamFitSettings
+    sim: SimulatedSpectrumParamFitSettings
+    species: Dict[SpectralSystemEnum, SpectralSystemParamFitSettings]

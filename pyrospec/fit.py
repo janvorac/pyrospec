@@ -1,10 +1,94 @@
+import copy
 import numpy as np
 
-from models import MeasuredSpectrumParams, SimulatedSpectrumParams, SpectralSystemParams
+from models import (
+    Params,
+    FitSettings,
+    MeasuredSpectrumParams,
+    SimulatedSpectrumParams,
+    SpectralSystemParams,
+)
 from enums import SpectralSystemEnum
 from pyrospec import spectrum
 from specdata import generate_spectrum, SpecDB
 from scipy.optimize import minimize
+
+
+def fit(
+    y_measured: np.ndarray, initial_guess: Params, settings: FitSettings | None = None
+):
+    """
+    Fit the measured spectrum to the simulated spectrum using the provided initial guess and settings.
+
+    :param y_measured: Measured spectrum data.
+    :param initial_guess: Initial parameters for the fit.
+    :param settings: Optional fit settings to control parameter bounds and fixed states.
+    :return: Fitted parameters and optimization result.
+    """
+    params = copy.deepcopy(initial_guess)
+
+    measured_spectrum_params = params.meas
+    simulated_spectrum_params = params.sim
+
+    x0 = []
+    x0_meaning = []
+
+    # Only the parameters that are not fixed in settings go into the optimization
+    for param_name, param_value in measured_spectrum_params.__dict__.items():
+        if (
+            settings
+            and hasattr(settings.meas, f"{param_name}_fixed")
+            and getattr(settings.meas, f"{param_name}_fixed")
+        ):
+            continue
+        x0.append(param_value)
+        x0_meaning.append(param_name)
+
+    for param_name, param_value in simulated_spectrum_params.__dict__.items():
+        if (
+            settings
+            and hasattr(settings.sim, f"{param_name}_fixed")
+            and getattr(settings.sim, f"{param_name}_fixed")
+        ) or param_name == "species_params":
+            continue
+        x0.append(param_value)
+        x0_meaning.append(param_name)
+
+    # Add species parameters if available
+    if simulated_spectrum_params.species_params:
+        for species, species_params in simulated_spectrum_params.species_params.items():
+            for param_name, param_value in species_params.__dict__.items():
+                if (
+                    settings
+                    and hasattr(settings.species[species], f"{param_name}_fixed")
+                    and getattr(settings.species[species], f"{param_name}_fixed")
+                ):
+                    continue
+                x0.append(param_value)
+                x0_meaning.append(f"{species.name}|{param_name}")
+
+    # Perform minimization
+    res = minimize(
+        fun=_min_func,
+        x0=x0,
+        args=(
+            y_measured,
+            measured_spectrum_params,
+            simulated_spectrum_params,
+            x0_meaning,
+        ),
+        method="Nelder-Mead",
+    )
+
+    _update_params(
+        measured_spectrum_params, simulated_spectrum_params, res.x, x0_meaning
+    )
+
+    if res.success:
+        params.meas = measured_spectrum_params
+        params.sim = simulated_spectrum_params
+
+    return params, res
 
 
 def get_residuals(
@@ -71,6 +155,9 @@ def _update_params(
     x0,
     x0_meaning,
 ):
+    """
+    modifies the measured and simulated spectrum parameters in place
+    """
     species_param_keywords = ["Tvib", "Trot", "intensity"]
     for param, value in zip(x0_meaning, x0):
         if param in measured_spectrum_params.__dict__:
@@ -115,20 +202,31 @@ if __name__ == "__main__":
         },
     )
 
-    x0 = [3000, 3000, 1]
-    x0_meaning = ["OHAX|Tvib", "OHAX|Trot", "OHAX|intensity"]
+    # x0 = [3000, 3000, 1]
+    # x0_meaning = ["OHAX|Tvib", "OHAX|Trot", "OHAX|intensity"]
 
-    res = minimize(
-        fun=_min_func,
-        x0=x0,
-        args=(
-            y_measured,
-            initial_measured_params,
-            initial_simulated_params,
-            x0_meaning,
-        ),
-        method="Nelder-Mead",
-        # options={'disp': True}
+    # res = minimize(
+    #     fun=_min_func,
+    #     x0=x0,
+    #     args=(
+    #         y_measured,
+    #         initial_measured_params,
+    #         initial_simulated_params,
+    #         x0_meaning,
+    #     ),
+    #     method="Nelder-Mead",
+    #     # options={'disp': True}
+    # )
+
+    initial_guess = Params(
+        meas=initial_measured_params,
+        sim=initial_simulated_params,
+    )
+
+    params, res = fit(
+        y_measured=y_measured,
+        initial_guess=initial_guess,
+        settings=None,
     )
 
     print(res)
