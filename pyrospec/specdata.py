@@ -4,12 +4,13 @@ import warnings
 from copy import copy
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from click import Path
 import numpy
 import pandas as pd
 
-from pyrospec import spectrum
-from pyrospec.enums import SpectralSystemEnum
-from pyrospec.models import SimulatedSpectrumParams, SpectralSystemParams
+from . import spectrum
+from .enums import SpectralSystemEnum
+from .models import SimulatedSpectrumParams, SpectralSystemParams
 
 DATA_DIR = pathlib.Path(__file__).parent / "spectral_databases"
 
@@ -23,6 +24,23 @@ WAV_RESERVE = 2
 
 class DatabaseError(Exception):
     pass
+
+
+def list_available_databases() -> list[str]:
+    db_dir = DATA_DIR
+    available_systems = []
+
+    for system in SpectralSystemEnum:
+        db_path = db_dir / system.filename
+        if db_path.exists():
+            available_systems.append(
+                {
+                    "id": system.value,
+                    "name": system.display_name,
+                }
+            )
+
+    return available_systems
 
 
 class SpecDB:

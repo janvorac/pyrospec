@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 from pydantic import BaseModel
 
-from pyrospec.enums import SpectralSystemEnum
+from .enums import SpectralSystemEnum
 
 
 class SpectralSystemParams(BaseModel):

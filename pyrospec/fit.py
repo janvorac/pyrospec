@@ -1,8 +1,8 @@
 import copy
 
 import numpy as np
-from enums import SpectralSystemEnum
-from models import (
+from .enums import SpectralSystemEnum
+from .models import (
     FitSettings,
     MeasuredSpectrumParamFitSettings,
     MeasuredSpectrumParams,
@@ -13,9 +13,9 @@ from models import (
     SpectralSystemParams,
 )
 from scipy.optimize import Bounds, minimize
-from specdata import SpecDB, generate_spectrum
+from .specdata import SpecDB, generate_spectrum
 
-from pyrospec import spectrum
+from . import spectrum
 
 
 def fit(
