@@ -48,6 +48,9 @@ class SpecDB:
     Class for working with spectral databases, using pandas
     """
 
+    # Class-level connection pool to prevent multiple connections to same database
+    _connection_pool: dict[str, sqlite.Connection] = {}
+
     def __init__(self, filename: str):
         """
         args:
@@ -67,7 +70,12 @@ class SpecDB:
         if not SpecDB.isSQLite3(to_open):
             raise DatabaseError(f"{to_open} is not a valid sqllite database!")
 
-        self.conn = sqlite.connect(to_open)
+        # Get connection from pool or create new one
+        db_path_str = str(to_open)
+        if db_path_str not in SpecDB._connection_pool:
+            SpecDB._connection_pool[db_path_str] = sqlite.connect(to_open)
+
+        self.conn = SpecDB._connection_pool[db_path_str]
 
         self.states = pd.read_sql_query("select J,E_J,E_v from upper_states", self.conn)
         self.last_Trot: float | None = None
@@ -90,6 +98,18 @@ class SpecDB:
         with open(filename, "rb") as fd:
             header = fd.read(100)
         return header[:16] == b"SQLite format 3\x00"
+
+    @classmethod
+    def close_all_connections(cls) -> None:
+        """Close all connections in the connection pool."""
+        for conn in cls._connection_pool.values():
+            conn.close()
+        cls._connection_pool.clear()
+
+    @classmethod
+    def get_connection_count(cls) -> int:
+        """Return the number of active connections in the pool."""
+        return len(cls._connection_pool)
 
     def __getstate__(self) -> str:
         return self.filename
