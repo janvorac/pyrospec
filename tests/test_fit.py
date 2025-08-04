@@ -1,14 +1,19 @@
 import json
 import numpy as np
+import pytest
 from pyrospec import fit, Params, estimate_intensity, SpectralSystemEnum
 
 
-def test_fit_with_sample_data():
-    """Test the fit function with sample data."""
+@pytest.mark.parametrize(
+    "input_file",
+    [
+        "tests/inputs/fit_input_x_shifted.json",
+    ],
+)
+def test_fit_with_sample_data(input_file):
+    """Test the fit function with sample data from different input files."""
     # Load test data
-    with open(
-        "/home/jan/packages/moes-web/backend/tests/inputs/fit_input_x_shifted.json", "r"
-    ) as f:
+    with open(input_file, "r") as f:
         input_data = json.load(f)
 
     y_measured = np.array(input_data["y"])
@@ -37,3 +42,4 @@ def test_fit_with_sample_data():
     assert hasattr(
         res, "success"
     )  # scipy optimization result should have success attribute
+    assert res.success is True
