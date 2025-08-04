@@ -5,13 +5,15 @@ __email__ = "janvorac@proton.me"
 
 # Direct imports for user convenience
 from .spectrum import Spectrum, match_spectra
-from .fit import fit
+from .fit import fit, estimate_intensity, get_x_measured
 from .enums import SpectralSystemEnum
 from .specdata import SpecDB, generate_spectrum, list_available_databases
 from .models import (
     FitSettings,
-    MeasuredSpectrumParamFitSettings,
-    MeasuredSpectrumParams,
+    XAbsoluteParamFitSettings,
+    SimulatedSpectrumParamFitSettings,
+    XAbsoluteParams,
+    XShiftedParams,
     Params,
     SimulatedSpectrumParamFitSettings,
     SimulatedSpectrumParams,

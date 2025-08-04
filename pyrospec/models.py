@@ -1,7 +1,7 @@
 from typing import Dict
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from .enums import SpectralSystemEnum
 
@@ -13,71 +13,106 @@ class SpectralSystemParams(BaseModel):
 
 
 class SpectralSystemParamFitSettings(BaseModel):
-    Tvib_min: float = 0
-    Tvib_max: float = np.inf
-    Tvib_fixed: bool
+    model_config = ConfigDict(populate_by_name=True)
 
-    Trot_min: float = 0
-    Trot_max: float = np.inf
-    Trot_fixed: bool
+    Tvib_min: float = Field(default=0, validation_alias="TvibMin")
+    Tvib_max: float = Field(default=np.inf, validation_alias="TvibMax")
+    Tvib_fixed: bool = Field(validation_alias="TvibFixed")
 
-    intensity_min: float = 0
-    intensity_max: float = np.inf
-    intensity_fixed: bool
+    Trot_min: float = Field(default=0, validation_alias="TrotMin")
+    Trot_max: float = Field(default=np.inf, validation_alias="TrotMax")
+    Trot_fixed: bool = Field(validation_alias="TrotFixed")
+
+    intensity_min: float = Field(default=0, validation_alias="intensityMin")
+    intensity_max: float = Field(default=np.inf, validation_alias="intensityMax")
+    intensity_fixed: bool = Field(validation_alias="intensityFixed")
 
 
 class SimulatedSpectrumParams(BaseModel):
-    slitf_gauss: float
-    slitf_lorentz: float
+    model_config = ConfigDict(populate_by_name=True)
+
+    slitf_gauss: float = Field(validation_alias="slitfGauss")
+    slitf_lorentz: float = Field(validation_alias="slitfLorentz")
     baseline: float
-    baseline_slope: float
-    species_params: Dict[SpectralSystemEnum, SpectralSystemParams]
+    baseline_slope: float = Field(validation_alias="baselineSlope")
+    species_params: Dict[SpectralSystemEnum, SpectralSystemParams] = Field(
+        validation_alias="speciesParams"
+    )
 
 
 class SimulatedSpectrumParamFitSettings(BaseModel):
-    slitf_gauss_min: float = 0
-    slitf_gauss_max: float = np.inf
-    slitf_gauss_fixed: bool
+    model_config = ConfigDict(populate_by_name=True)
 
-    slitf_lorentz_min: float = 0
-    slitf_lorentz_max: float = np.inf
-    slitf_lorentz_fixed: bool
+    slitf_gauss_min: float = Field(default=0, validation_alias="slitfGaussMin")
+    slitf_gauss_max: float = Field(default=np.inf, validation_alias="slitfGaussMax")
+    slitf_gauss_fixed: bool = Field(validation_alias="slitfGaussFixed")
 
-    baseline_min: float = -np.inf
-    baseline_max: float = np.inf
-    baseline_fixed: bool
+    slitf_lorentz_min: float = Field(default=0, validation_alias="slitfLorentzMin")
+    slitf_lorentz_max: float = Field(default=np.inf, validation_alias="slitfLorentzMax")
+    slitf_lorentz_fixed: bool = Field(validation_alias="slitfLorentzFixed")
 
-    baseline_slope_min: float = -np.inf
-    baseline_slope_max: float = np.inf
-    baseline_slope_fixed: bool
+    baseline_min: float = Field(default=-np.inf, validation_alias="baselineMin")
+    baseline_max: float = Field(default=np.inf, validation_alias="baselineMax")
+    baseline_fixed: bool = Field(validation_alias="baselineFixed")
+
+    baseline_slope_min: float = Field(
+        default=-np.inf, validation_alias="baselineSlopeMin"
+    )
+    baseline_slope_max: float = Field(
+        default=np.inf, validation_alias="baselineSlopeMax"
+    )
+    baseline_slope_fixed: bool = Field(validation_alias="baselineSlopeFixed")
 
 
-class MeasuredSpectrumParams(BaseModel):
-    wav_start: float
-    wav_step: float
-    wav_2nd: float
+class XAbsoluteParams(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    wav_start: float = Field(validation_alias="wavStart")
+    wav_step: float = Field(validation_alias="wavStep")
+    wav_2nd: float = Field(validation_alias="wav2nd")
 
 
-class MeasuredSpectrumParamFitSettings(BaseModel):
-    wav_start_min: float = 0
-    wav_start_max: float = np.inf
-    wav_start_fixed: bool
+class XShiftedParams(BaseModel):
+    x: list[float]
+    shift: float
 
-    wav_step_min: float = 0
-    wav_step_max: float = np.inf
-    wav_step_fixed: bool
 
-    wav_2nd_min: float = -np.inf
-    wav_2nd_max: float = np.inf
-    wav_2nd_fixed: bool
+class XAbsoluteParamFitSettings(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    wav_start_min: float = Field(default=0, validation_alias="wavStartMin")
+    wav_start_max: float = Field(default=np.inf, validation_alias="wavStartMax")
+    wav_start_fixed: bool = Field(validation_alias="wavStartFixed")
+
+    wav_step_min: float = Field(default=0, validation_alias="wavStepMin")
+    wav_step_max: float = Field(default=np.inf, validation_alias="wavStepMax")
+    wav_step_fixed: bool = Field(validation_alias="wavStepFixed")
+
+    wav_2nd_min: float = Field(default=-np.inf, validation_alias="wav2ndMin")
+    wav_2nd_max: float = Field(default=np.inf, validation_alias="wav2ndMax")
+    wav_2nd_fixed: bool = Field(validation_alias="wav2ndFixed")
+
+
+class XShiftedParamFitSettings(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    shift_min: float = Field(default=-np.inf, validation_alias="shiftMin")
+    shift_max: float = Field(default=np.inf, validation_alias="shiftMax")
+    shift_fixed: bool = Field(validation_alias="shiftFixed")
 
 
 class Params(BaseModel):
-    meas: MeasuredSpectrumParams
+    model_config = ConfigDict(populate_by_name=True)
+
+    x_params: XAbsoluteParams | XShiftedParams = Field(validation_alias="xParams")
     sim: SimulatedSpectrumParams
 
 
 class FitSettings(BaseModel):
-    meas: MeasuredSpectrumParamFitSettings
+    model_config = ConfigDict(populate_by_name=True)
+
+    x_params: XAbsoluteParamFitSettings | XShiftedParamFitSettings = Field(
+        validation_alias="xParams"
+    )
     sim: SimulatedSpectrumParamFitSettings
     species: Dict[SpectralSystemEnum, SpectralSystemParamFitSettings]
