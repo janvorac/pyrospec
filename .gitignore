@@ -56,3 +56,7 @@ coverage.xml
 .vscode/
 
 .venv
+
+# SQLite temp files
+*.db-shm
+*.db-wal
