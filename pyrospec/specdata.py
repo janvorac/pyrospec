@@ -3,8 +3,8 @@ import sqlite3 as sqlite
 import warnings
 from copy import copy
 from typing import TYPE_CHECKING, Any, Literal, cast
+import threading
 
-from click import Path
 import numpy
 import pandas as pd
 
@@ -48,8 +48,8 @@ class SpecDB:
     Class for working with spectral databases, using pandas
     """
 
-    # Class-level connection pool to prevent multiple connections to same database
-    _connection_pool: dict[str, sqlite.Connection] = {}
+    # Thread-local storage for connections to handle multi-threading
+    _thread_local = threading.local()
 
     def __init__(self, filename: str):
         """
@@ -70,12 +70,19 @@ class SpecDB:
         if not SpecDB.isSQLite3(to_open):
             raise DatabaseError(f"{to_open} is not a valid sqllite database!")
 
-        # Get connection from pool or create new one
-        db_path_str = str(to_open)
-        if db_path_str not in SpecDB._connection_pool:
-            SpecDB._connection_pool[db_path_str] = sqlite.connect(to_open)
+        # Get or create thread-local connection pool
+        if not hasattr(SpecDB._thread_local, "connections"):
+            SpecDB._thread_local.connections = {}
 
-        self.conn = SpecDB._connection_pool[db_path_str]
+        # Get connection from thread-local pool or create new one
+        db_path_str = str(to_open)
+        if db_path_str not in SpecDB._thread_local.connections:
+            # Enable thread-safe mode and WAL mode for better concurrency
+            conn = sqlite.connect(to_open, check_same_thread=False)
+            conn.execute("PRAGMA journal_mode=WAL")
+            SpecDB._thread_local.connections[db_path_str] = conn
+
+        self.conn = SpecDB._thread_local.connections[db_path_str]
 
         self.states = pd.read_sql_query("select J,E_J,E_v from upper_states", self.conn)
         self.last_Trot: float | None = None
@@ -101,15 +108,18 @@ class SpecDB:
 
     @classmethod
     def close_all_connections(cls) -> None:
-        """Close all connections in the connection pool."""
-        for conn in cls._connection_pool.values():
-            conn.close()
-        cls._connection_pool.clear()
+        """Close all connections in the current thread's connection pool."""
+        if hasattr(cls._thread_local, "connections"):
+            for conn in cls._thread_local.connections.values():
+                conn.close()
+            cls._thread_local.connections.clear()
 
     @classmethod
     def get_connection_count(cls) -> int:
-        """Return the number of active connections in the pool."""
-        return len(cls._connection_pool)
+        """Return the number of active connections in the current thread's pool."""
+        if hasattr(cls._thread_local, "connections"):
+            return len(cls._thread_local.connections)
+        return 0
 
     def __getstate__(self) -> str:
         return self.filename
